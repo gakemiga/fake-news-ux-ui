@@ -1,0 +1,541 @@
+!<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fake News — Verificador</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0d10;
+      --card: #12161a;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --primary: #4f46e5;
+      --primary-2: #6366f1;
+      --border: #1f2937;
+      --ok: #16a34a;
+      --ok-600: #059669;
+      --bad: #ef4444;
+      --bad-600: #dc2626;
+      --warn: #f59e0b;
+      --warn-700: #d97706;
+      --shadow: 0 30px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.03);
+      --radius-xl: 18px;
+      --radius-lg: 14px;
+      --radius-md: 12px;
+      --radius-sm: 10px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 800px at 20% -10%, rgba(79,70,229,.18), transparent 60%),
+                  radial-gradient(900px 600px at 120% 20%, rgba(239,68,68,.12), transparent 60%),
+                  radial-gradient(800px 600px at -10% 120%, rgba(245,158,11,.12), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      font: 16px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      letter-spacing: 0.2px;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 32px auto 64px;
+      padding: 0 20px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .brand {
+      display: grid;
+      grid-auto-flow: column;
+      gap: 12px;
+      align-items: center;
+    }
+    .logo {
+      width: 42px; height: 42px;
+      display: grid; place-items: center;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      box-shadow: 0 10px 30px rgba(79,70,229,.45), inset 0 1px 0 rgba(255,255,255,.18);
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: .3px;
+    }
+    .brand .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: -2px;
+    }
+    .actions {
+      display: flex; gap: 10px; align-items: center;
+    }
+    .btn {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, #151a20, #11151a);
+      padding: 10px 14px;
+      border-radius: 12px;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 10px;
+      transition: transform .05s ease, border-color .2s ease, background .2s ease, opacity .2s ease;
+      box-shadow: var(--shadow);
+      user-select: none;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn[disabled] { opacity: .5; cursor: not-allowed; }
+    .btn.primary {
+      border-color: rgba(99,102,241,.5);
+      background: linear-gradient(180deg, rgba(99,102,241,.15), rgba(79,70,229,.15));
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.25fr .9fr;
+      gap: 18px;
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .tabs {
+      display: grid; grid-auto-flow: column;
+      gap: 10px;
+      padding: 8px;
+      background: #0f1317;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+    .tab {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background .2s ease, color .2s ease, border-color .2s ease;
+    }
+    .tab[aria-selected="true"] {
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border-color: var(--border);
+    }
+    .input-area {
+      display: none;
+    }
+    .input-area.active { display: grid; gap: 12px; }
+    .field {
+      position: relative;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      min-height: 140px;
+      outline: none;
+    }
+    textarea {
+      width: 100%; min-height: 220px; resize: vertical;
+      background: transparent; border: 0; color: var(--text); outline: none; font: inherit;
+    }
+    .inline-field {
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 10px; align-items: center;
+    }
+    input[type="url"], input[type="text"] {
+      width: 100%;
+      background: transparent; border: 0; color: var(--text);
+      outline: none; font: inherit; padding: 10px;
+    }
+    .dropzone {
+      display: grid; place-items: center; text-align: center; gap: 8px;
+      padding: 30px; min-height: 220px;
+      border: 2px dashed #263241;
+      border-radius: var(--radius-lg);
+    }
+    .dropzone.dragover { border-color: var(--primary-2); background: rgba(99,102,241,.08); }
+    .muted { color: var(--muted); font-size: 14px; }
+    .hint { font-size: 12px; color: var(--muted); }
+    .kbd { border: 1px solid var(--border); padding: 2px 6px; border-radius: 6px; font-size: 12px; }
+    .result {
+      display: grid; gap: 14px;
+    }
+    .status {
+      display: grid; grid-auto-flow: column; align-items: center; gap: 12px;
+      width: max-content; padding: 10px 12px;
+      border-radius: 999px; border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    }
+    .dot {
+      width: 12px; height: 12px; border-radius: 999px;
+      box-shadow: 0 0 0 6px rgba(255,255,255,.02) inset, 0 0 18px rgba(0,0,0,.25) inset;
+    }
+    .dot.green { background: var(--ok); }
+    .dot.red { background: var(--bad); }
+    .dot.yellow { background: var(--warn); }
+    .status label { font-weight: 700; letter-spacing: .3px; }
+    .details {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: #0e1216;
+      padding: 14px;
+    }
+    .details h3 { margin: 0 0 6px; font-size: 14px; color: #cbd5e1; }
+    .details p { margin: 0; color: var(--muted); }
+    .history {
+      display: grid; gap: 10px;
+    }
+    .history h2 { margin: 0 0 6px; font-size: 14px; color: #cbd5e1; }
+    .item {
+      display: grid; gap: 6px;
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+    }
+    .badge {
+      display: inline-grid; grid-auto-flow: column; align-items: center; gap: 8px;
+      border: 1px solid var(--border);
+      padding: 6px 10px; border-radius: 999px;
+      font-size: 12px; color: var(--muted);
+    }
+    .badge .dot { width: 10px; height: 10px; }
+    .sr-only {
+      position: absolute !important;
+      height: 1px; width: 1px; overflow: hidden;
+      clip: rect(1px, 1px, 1px, 1px); white-space: nowrap;
+    }
+    .footer-note {
+      text-align: center; color: var(--muted); font-size: 12px; margin-top: 14px;
+    }
+    /* Focus states */
+    :focus-visible {
+      outline: 2px solid var(--primary-2);
+      outline-offset: 2px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand" aria-label="Aplicativo Fake News">
+        <div class="logo" aria-hidden="true">
+          <!-- Shield/Check icon -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 2l7 3v5c0 5.25-3.5 9.94-7 11-3.5-1.06-7-5.75-7-11V5l7-3z" fill="white" opacity=".22"/>
+            <path d="M9.2 11.8l2 2 4.6-4.6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Fake News</h1>
+          <div class="subtitle">Verifique textos, imagens, áudios e links — rápido e com clareza.</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btnLimpar" type="button" aria-label="Limpar entradas">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="currentColor" stroke-width="2"/>
+            <path d="M10 10v6M14 10v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Limpar
+        </button>
+        <button class="btn primary" id="btnVerificar" type="button" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Verificar
+        </button>
+      </div>
+    </header>
+
+    <main class="grid" role="main">
+      <section class="card" aria-labelledby="inputTitle">
+        <h2 id="inputTitle" class="sr-only">Área de entrada</h2>
+
+        <div class="tabs" role="tablist" aria-label="Selecionar tipo de verificação">
+          <button class="tab" role="tab" aria-selected="true" aria-controls="pane-texto" id="tab-texto">Texto</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="pane-imagem" id="tab-imagem">Imagem</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="pane-audio" id="tab-audio">Áudio</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="pane-link" id="tab-link">Link</button>
+        </div>
+
+        <!-- Texto -->
+        <div class="input-area active" id="pane-texto" role="tabpanel" aria-labelledby="tab-texto">
+          <div class="field">
+            <label class="sr-only" for="texto">Cole o texto da notícia</label>
+            <textarea id="texto" placeholder="Cole aqui o texto da notícia, mensagem ou legenda..."></textarea>
+          </div>
+          <div class="hint">Dica: você pode colar com <span class="kbd">Ctrl</span> + <span class="kbd">V</span> (Windows) ou <span class="kbd">⌘</span> + <span class="kbd">V</span> (Mac).</div>
+        </div>
+
+        <!-- Imagem -->
+        <div class="input-area" id="pane-imagem" role="tabpanel" aria-labelledby="tab-imagem">
+          <div class="field dropzone" id="dropImagem" tabindex="0" role="button" aria-label="Envie ou solte uma imagem para verificar">
+            <div>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="3" y="12" width="18" height="8" rx="3" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+            <div>
+              <div>Solte uma imagem aqui</div>
+              <div class="muted">ou clique para selecionar</div>
+            </div>
+            <input id="inputImagem" class="sr-only" type="file" accept="image/*" />
+          </div>
+          <div class="hint">Formatos aceitos: PNG, JPG, WEBP. Tamanho máx. 10MB.</div>
+        </div>
+
+        <!-- Áudio -->
+        <div class="input-area" id="pane-audio" role="tabpanel" aria-labelledby="tab-audio">
+          <div class="field dropzone" id="dropAudio" tabindex="0" role="button" aria-label="Envie ou solte um arquivo de áudio para verificar">
+            <div>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 18a6 6 0 0 0 6-6V5m0 0l4 4m-4-4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="3" y="12" width="6" height="8" rx="2" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+            <div>
+              <div>Solte um áudio aqui</div>
+              <div class="muted">ou clique para selecionar</div>
+            </div>
+            <input id="inputAudio" class="sr-only" type="file" accept="audio/*" />
+          </div>
+          <div class="hint">Formatos aceitos: MP3, WAV, M4A. Tamanho máx. 20MB.</div>
+        </div>
+
+        <!-- Link -->
+        <div class="input-area" id="pane-link" role="tabpanel" aria-labelledby="tab-link">
+          <div class="field inline-field">
+            <label class="sr-only" for="url">Cole o link da notícia</label>
+            <input id="url" type="url" placeholder="https://exemplo.com/noticia..." inputmode="url" spellcheck="false">
+            <button class="btn" type="button" id="btnColar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 9h6a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <rect x="9" y="3" width="6" height="4" rx="1.5" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              Colar
+            </button>
+          </div>
+          <div class="hint">Cole URLs completas. Ex.: https://site.com/materia</div>
+        </div>
+
+      </section>
+
+      <!-- Resultado / Histórico -->
+      <aside class="card" aria-labelledby="resultTitle">
+        <h2 id="resultTitle" class="sr-only">Resultado da verificação</h2>
+        <div class="result" id="resultado">
+          <div class="status" aria-live="polite" id="statusPill">
+            <span class="dot yellow" id="statusDot" aria-hidden="true"></span>
+            <label id="statusLabel">Aguardando verificação</label>
+          </div>
+          <div class="details">
+            <h3>Detalhes</h3>
+            <p id="detalhesTexto">Envie um conteúdo e clique em <b>Verificar</b>. Se for verdadeiro: <b>verde</b>; falso: <b>vermelho</b>; em análise/indefinido: <b>amarelo</b>.</p>
+          </div>
+          <div class="history" aria-live="polite" aria-relevant="additions">
+            <h2>Histórico</h2>
+            <div id="hist"></div>
+          </div>
+          <div class="footer-note">Este é um mockup de interface. A verificação real exige APIs e modelos especializados.</div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    // A11y helpers
+    const qs = (s, el = document) => el.querySelector(s);
+    const qsa = (s, el = document) => Array.from(el.querySelectorAll(s));
+
+    // Tabs behavior
+    const tabs = qsa('.tab');
+    const panes = qsa('.input-area');
+    function setTab(activeId) {
+      tabs.forEach(t => t.setAttribute('aria-selected', t.id === 'tab-' + activeId));
+      panes.forEach(p => p.classList.toggle('active', p.id === 'pane-' + activeId));
+      validateInputs();
+    }
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => setTab(tab.id.replace('tab-','')));
+      tab.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          const idx = tabs.indexOf(document.activeElement);
+          const dir = e.key === 'ArrowRight' ? 1 : -1;
+          const next = tabs[(idx + dir + tabs.length) % tabs.length];
+          next.focus();
+          setTab(next.id.replace('tab-',''));
+        }
+      });
+    });
+
+    // Dropzones
+    function wireDropzone(zoneId, inputId) {
+      const zone = qs('#' + zoneId);
+      const input = qs('#' + inputId);
+      zone.addEventListener('click', () => input.click());
+      zone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }});
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files?.length) {
+          input.files = e.dataTransfer.files;
+          zone.dataset.filename = input.files[0].name;
+          zone.querySelector('div div').innerText = input.files[0].name;
+          validateInputs();
+        }
+      });
+      input.addEventListener('change', () => {
+        if (input.files?.length) {
+          zone.dataset.filename = input.files[0].name;
+          zone.querySelector('div div').innerText = input.files[0].name;
+          validateInputs();
+        }
+      });
+    }
+    wireDropzone('dropImagem','inputImagem');
+    wireDropzone('dropAudio','inputAudio');
+
+    // Inputs
+    const txt = qs('#texto');
+    const url = qs('#url');
+    const btnVerificar = qs('#btnVerificar');
+    const btnLimpar = qs('#btnLimpar');
+    const btnColar = qs('#btnColar');
+
+    function validateInputs() {
+      const activePane = qs('.input-area.active').id;
+      let ok = false;
+      if (activePane === 'pane-texto') ok = txt.value.trim().length > 10;
+      if (activePane === 'pane-link') ok = /^https?:\/\/\S+\.\S+/.test(url.value.trim());
+      if (activePane === 'pane-imagem') ok = !!qs('#inputImagem').files.length;
+      if (activePane === 'pane-audio') ok = !!qs('#inputAudio').files.length;
+      btnVerificar.disabled = !ok;
+      return ok;
+    }
+    ['input','change','keyup'].forEach(evt => {
+      txt.addEventListener(evt, validateInputs);
+      url.addEventListener(evt, validateInputs);
+    });
+
+    // Clipboard paste for URL
+    btnColar.addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        url.value = text;
+        validateInputs();
+      } catch(e) {
+        alert('Não foi possível ler a área de transferência. Cole manualmente (Ctrl/⌘+V).');
+      }
+    });
+
+    // Status rendering
+    const statusDot = qs('#statusDot');
+    const statusLabel = qs('#statusLabel');
+    const detalhes = qs('#detalhesTexto');
+    const hist = qs('#hist');
+
+    function setStatus(type, title, desc) {
+      statusDot.classList.remove('green','red','yellow');
+      statusDot.classList.add(type === 'real' ? 'green' : type === 'fake' ? 'red' : 'yellow');
+      statusLabel.textContent = type === 'real' ? 'Verdadeiro' : type === 'fake' ? 'Falso' : 'Em análise / Indefinido';
+      detalhes.innerHTML = desc || 'Sem detalhes adicionais.';
+
+      // Add to "history"
+      const item = document.createElement('div');
+      item.className = 'item';
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      const d = document.createElement('span'); d.className = 'dot ' + (type==='real'?'green':type==='fake'?'red':'yellow');
+      const t = document.createElement('span'); t.textContent = statusLabel.textContent;
+      badge.appendChild(d); badge.appendChild(t);
+
+      const meta = document.createElement('div');
+      meta.className = 'muted';
+      const now = new Date();
+      meta.textContent = now.toLocaleString('pt-BR');
+      item.appendChild(badge);
+      item.appendChild(meta);
+      hist.prepend(item);
+    }
+
+    // Mock verification (demo only). Replace with real APIs later.
+    function mockVerify() {
+      const activePane = qs('.input-area.active').id;
+      let seed = 0;
+      if (activePane === 'pane-texto') seed = txt.value.length;
+      if (activePane === 'pane-link') seed = url.value.length;
+      if (activePane === 'pane-imagem') seed = qs('#inputImagem').files[0]?.name.length || 1;
+      if (activePane === 'pane-audio') seed = qs('#inputAudio').files[0]?.name.length || 1;
+
+      // Deterministic pseudo-result for demo
+      const r = seed % 3; // 0,1,2
+      if (r === 0) {
+        setStatus('real', 'Verdadeiro', 'O conteúdo coincide com fontes confiáveis e não há divergências conhecidas.');
+      } else if (r === 1) {
+        setStatus('fake', 'Falso', 'Foram encontrados sinais de manipulação e contradições com bases verificadas.');
+      } else {
+        setStatus('indef', 'Em análise', 'Não há evidências suficientes para concluir. Recomendamos verificar a fonte e aguardar atualização.');
+      }
+    }
+
+    btnVerificar.addEventListener('click', () => {
+      if (!validateInputs()) return;
+      // Simulate progress
+      btnVerificar.disabled = true;
+      const prev = statusLabel.textContent;
+      statusLabel.textContent = 'Verificando...';
+      const oldClassList = [...statusDot.classList];
+      statusDot.classList.remove('green','red','yellow');
+      statusDot.style.background = 'linear-gradient(90deg, #94a3b8 0%, #cbd5e1 50%, #94a3b8 100%)';
+      let dots = 0;
+      const spin = setInterval(()=>{
+        statusLabel.textContent = 'Verificando' + '.'.repeat(++dots % 4);
+      }, 300);
+      setTimeout(()=>{
+        clearInterval(spin);
+        statusDot.style.background = '';
+        // Restore class list (not needed, we set again in setStatus)
+        mockVerify();
+        btnVerificar.disabled = false;
+      }, 900);
+    });
+
+    btnLimpar.addEventListener('click', () => {
+      txt.value = '';
+      url.value = '';
+      qs('#inputImagem').value = '';
+      qs('#inputAudio').value = '';
+      qs('#dropImagem').removeAttribute('data-filename');
+      qs('#dropAudio').removeAttribute('data-filename');
+      qs('#dropImagem').querySelector('div div').innerText = 'Solte uma imagem aqui';
+      qs('#dropAudio').querySelector('div div').innerText = 'Solte um áudio aqui';
+      setStatus('indef', 'Aguardando verificação', 'Envie um conteúdo e clique em Verificar.');
+      validateInputs();
+      txt.focus();
+    });
+
+    // Initial focus
+    txt.focus();
+  </script>
+</body>
+</html>
